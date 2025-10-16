@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free AI Video Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .preview-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .preview-container img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        button.generate-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button.generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button.generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result-container.active {
+            display: block;
+        }
+
+        .result-container video {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .info-box strong {
+            color: #1976D2;
+        }
+
+        .api-key-section {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .api-key-section h3 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .api-key-section a {
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 AI Video Generator</h1>
+        <p class="subtitle">Free Text-to-Video & Image-to-Video</p>
+
+        <div class="api-key-section">
+            <h3>⚙️ Setup Required</h3>
+            <p>To use this tool, you need a free Hugging Face API token:</p>
+            <ol style="margin: 10px 0 10px 20px;">
+                <li>Go to <a href="https://huggingface.co/settings/tokens" target="_blank">Hugging Face Tokens</a></li>
+                <li>Create a free account (if you don't have one)</li>
+                <li>Click "New token" and copy it</li>
+                <li>Paste it below</li>
+            </ol>
+            <div class="input-group">
+                <input type="password" id="apiKey" placeholder="Enter your Hugging Face API token">
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="text-to-video">Text to Video</button>
+            <button class="tab" data-tab="image-to-video">Image to Video</button>
+        </div>
+
+        <!-- Text to Video Tab -->
+        <div class="tab-content active" id="text-to-video">
+            <div class="info-box">
+                <strong>Note:</strong> Free video generation takes 1-3 minutes and produces short clips (2-5 seconds). Quality is basic but functional.
+            </div>
+
+            <div class="input-group">
+                <label for="textPrompt">Describe your video:</label>
+                <textarea id="textPrompt" placeholder="Example: A beautiful sunset over the ocean with gentle waves"></textarea>
+            </div>
+
+            <button class="generate-btn" onclick="generateTextToVideo()">Generate Video</button>
+
+            <div class="loading" id="loading1">
+                <div class="spinner"></div>
+                <p>Generating your video... This may take 1-3 minutes. Please wait...</p>
+            </div>
+
+            <div class="error" id="error1"></div>
+
+            <div class="result-container" id="result1">
+                <h3>Your Generated Video:</h3>
+                <video id="outputVideo1" controls></video>
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">Right-click to download</p>
+            </div>
+        </div>
+
+        <!-- Image to Video Tab -->
+        <div class="tab-content" id="image-to-video">
+            <div class="info-box">
+                <strong>Note:</strong> Upload an image and optionally add a prompt to animate it. Processing takes 1-3 minutes.
+            </div>
+
+            <div class="input-group">
+                <label for="imageUpload">Upload Image:</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="imageUpload" accept="image/*" onchange="previewImage()">
+                    <label for="imageUpload" class="file-input-label">
+                        📁 Click to upload image (JPG, PNG)
+                    </label>
+                </div>
+                <div class="preview-container" id="imagePreview"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="imagePrompt">Animation prompt (optional):</label>
+                <textarea id="imagePrompt" placeholder="Example: Make the clouds move slowly across the sky"></textarea>
+            </div>
+
+            <button class="generate-btn" onclick="generateImageToVideo()">Animate Image</button>
+
+            <div class="loading" id="loading2">
+                <div class="spinner"></div>
+                <p>Animating your image... This may take 1-3 minutes. Please wait...</p>
+            </div>
+
+            <div class="error" id="error2"></div>
+
+            <div class="result-container" id="result2">
+                <h3>Your Animated Video:</h3>
+                <video id="outputVideo2" controls></video>
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">Right-click to download</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Image preview
+        function previewImage() {
+            const file = document.getElementById('imageUpload').files[0];
+            const preview = document.getElementById('imagePreview');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Text to Video Generation
+        async function generateTextToVideo() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const prompt = document.getElementById('textPrompt').value.trim();
+            
+            if (!apiKey) {
+                showError('error1', 'Please enter your Hugging Face API token first!');
+                return;
+            }
+            
+            if (!prompt) {
+                showError('error1', 'Please enter a video description!');
+                return;
+            }
+
+            showLoading('loading1', true);
+            hideError('error1');
+            hideResult('result1');
+
+            try {
+                // Using AnimateDiff or similar text-to-video model
+                const response = await fetch(
+                    "https://api-inference.huggingface.co/models/ali-vilab/text-to-video-ms-1.7b",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${apiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        method: "POST",
+                        body: JSON.stringify({ inputs: prompt }),
+                    }
+                );
+
+                if (!response.ok) {
+                    if (response.status === 503) {
+                        throw new Error('Model is loading. Please wait 20 seconds and try again.');
+                    } else if (response.status === 401) {
+                        throw new Error('Invalid API token. Please check your Hugging Face token.');
+                    }
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+                const videoUrl = URL.createObjectURL(blob);
+                
+                document.getElementById('outputVideo1').src = videoUrl;
+                showResult('result1');
+                
+            } catch (error) {
+                showError('error1', error.message);
+            } finally {
+                showLoading('loading1', false);
+            }
+        }
+
+        // Image to Video Generation
+        async function generateImageToVideo() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const imageFile = document.getElementById('imageUpload').files[0];
+            const prompt = document.getElementById('imagePrompt').value.trim() || "animate this image";
+            
+            if (!apiKey) {
+                showError('error2', 'Please enter your Hugging Face API token first!');
+                return;
+            }
+            
+            if (!imageFile) {
+                showError('error2', 'Please upload an image!');
+                return;
+            }
+
+            showLoading('loading2', true);
+            hideError('error2');
+            hideResult('result2');
+
+            try {
+                // Convert image to base64
+                const base64Image = await fileToBase64(imageFile);
+                
+                // Using Stable Video Diffusion or similar
+                const response = await fetch(
+                    "https://api-inference.huggingface.co/models/stabilityai/stable-video-diffusion-img2vid-xt",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${apiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        method: "POST",
+                        body: JSON.stringify({
+                            inputs: base64Image,
+                            parameters: {
+                                num_frames: 14,
+                            }
+                        }),
+                    }
+                );
+
+                if (!response.ok) {
+                    if (response.status === 503) {
+                        throw new Error('Model is loading. Please wait 20 seconds and try again.');
+                    } else if (response.status === 401) {
+                        throw new Error('Invalid API token. Please check your Hugging Face token.');
+                    }
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+                const videoUrl = URL.createObjectURL(blob);
+                
+                document.getElementById('outputVideo2').src = videoUrl;
+                showResult('result2');
+                
+            } catch (error) {
+                showError('error2', error.message);
+            } finally {
+                showLoading('loading2', false);
+            }
+        }
+
+        // Helper function to convert file to base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // UI Helper Functions
+        function showLoading(id, show) {
+            const loading = document.getElementById(id);
+            if (show) {
+                loading.classList.add('active');
+                // Disable generate buttons
+                document.querySelectorAll('.generate-btn').forEach(btn => btn.disabled = true);
+            } else {
+                loading.classList.remove('active');
+                document.querySelectorAll('.generate-btn').forEach(btn => btn.disabled = false);
+            }
+        }
+
+        function showError(id, message) {
+            const error = document.getElementById(id);
+            error.textContent = message;
+            error.classList.add('active');
+        }
+
+        function hideError(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function showResult(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function hideResult(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+    </script>
+</body>
+</html>
