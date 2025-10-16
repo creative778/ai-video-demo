@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Generator Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.8em;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        .subtitle {
+            text-align: center;
+            color: #ddd;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+        .info-box {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border-left: 4px solid #4CAF50;
+        }
+        .info-box strong {
+            color: #64ffda;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        .tab {
+            flex: 1;
+            padding: 15px;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #64ffda;
+            color: #121212;
+            box-shadow: 0 0 15px rgba(100,255,218,0.5);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #64ffda;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #444;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            min-height: 100px;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #64ffda;
+            box-shadow: 0 0 0 2px rgba(100,255,218,0.3);
+        }
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(to right, #64ffda, #00c853);
+            color: #121212;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(100,255,218,0.4);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 25px 0;
+        }
+        .loading.active {
+            display: block;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.2);
+            border-top: 5px solid #64ffda;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            display: none;
+        }
+        .result.active {
+            display: block;
+        }
+        video {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .error {
+            background: #ff5252;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+        .placeholder {
+            text-align: center;
+            padding: 30px 0;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 AI Video Generator</h1>
+        <p class="subtitle">Client-Side Demo (No API Required)</p>
+
+        <div class="info-box">
+            <strong>This is a demonstration:</strong> Real AI video generation requires powerful servers. This demo simulates the experience using pre-generated videos - no actual AI processing occurs. GitHub Pages cannot run real video generation.
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="text">Text to Video</button>
+            <button class="tab" data-tab="image">Image to Video</button>
+        </div>
+
+        <!-- Text to Video Tab -->
+        <div class="tab-content active" id="text-content">
+            <div class="input-group">
+                <label>Describe your video:</label>
+                <textarea id="text-prompt" placeholder="Example: A peaceful forest with sunlight filtering through trees"></textarea>
+            </div>
+            <button onclick="simulateTextToVideo()">Generate Video</button>
+
+            <div class="loading" id="text-loading">
+                <div class="spinner"></div>
+                <p>Simulating AI processing... (5 seconds)</p>
+            </div>
+
+            <div class="result" id="text-result">
+                <h3>Generated Video Demo:</h3>
+                <video id="text-video" controls></video>
+                <p style="color: #64ffda; margin-top: 10px;">This is a pre-generated example - not from your prompt</p>
+            </div>
+        </div>
+
+        <!-- Image to Video Tab -->
+        <div class="tab-content" id="image-content">
+            <div class="input-group">
+                <label>Upload image (for demo):</label>
+                <input type="file" id="image-upload" accept="image/*" style="display: none;">
+                <div class="file-input" onclick="document.getElementById('image-upload').click()">
+                    📁 Click to select image
+                </div>
+                <div class="placeholder" id="image-preview">
+                    Your image will appear here
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Animation description (optional):</label>
+                <textarea id="image-prompt" placeholder="Example: Gentle breeze moving through leaves"></textarea>
+            </div>
+            <button onclick="simulateImageToVideo()">Animate Image</button>
+
+            <div class="loading" id="image-loading">
+                <div class="spinner"></div>
+                <p>Simulating animation... (5 seconds)</p>
+            </div>
+
+            <div class="result" id="image-result">
+                <h3>Animated Result Demo:</h3>
+                <video id="image-video" controls></video>
+                <p style="color: #64ffda; margin-top: 10px;">This is a pre-generated example - not from your image</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + '-content').classList.add('active');
+            });
+        });
+
+        // Image upload preview
+        document.getElementById('image-upload').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                const preview = document.getElementById('image-preview');
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    preview.innerHTML = `<img src="${event.target.result}" style="max-height: 200px; max-width: 100%; border-radius: 8px;">`;
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Text-to-Video Simulation
+        function simulateTextToVideo() {
+            const prompt = document.getElementById('text-prompt').value.trim();
+            
+            if (!prompt) {
+                alert('Please enter a video description!');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('text-loading').classList.add('active');
+            document.getElementById('text-result').classList.remove('active');
+            
+            // Simulate processing time
+            setTimeout(() => {
+                // Show result with random demo video
+                const videos = [
+                    'https://storage.googleapis.com/gweb-uniblog-publish-prod/original_images/Beach__a_video_about_summer.mp4',
+                    'https://www.videvo.net/videvo_files/converted/2022_06/preview_62b4bb5e4c5468.80346048.mp4',
+                    'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4'
+                ];
+                
+                const randomVideo = videos[Math.floor(Math.random() * videos.length)];
+                document.getElementById('text-video').src = randomVideo;
+                
+                document.getElementById('text-loading').classList.remove('active');
+                document.getElementById('text-result').classList.add('active');
+            }, 5000);
+        }
+
+        // Image-to-Video Simulation
+        function simulateImageToVideo() {
+            const imageFile = document.getElementById('image-upload').files[0];
+            
+            if (!imageFile) {
+                alert('Please upload an image first!');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('image-loading').classList.add('active');
+            document.getElementById('image-result').classList.remove('active');
+            
+            // Simulate processing time
+            setTimeout(() => {
+                // Show result with random demo video
+                const videos = [
+                    'https://storage.googleapis.com/gweb-uniblog-publish-prod/original_images/Beach__a_video_about_summer.mp4',
+                    'https://pixabay.com/en/videos/download/video-7422_large.mp4',
+                    'https://www.videvo.net/videvo_files/converted/2021_12/preview_61c08c2f9b20b7.09127695.mp4'
+                ];
+                
+                const randomVideo = videos[Math.floor(Math.random() * videos.length)];
+                document.getElementById('image-video').src = randomVideo;
+                
+                document.getElementById('image-loading').classList.remove('active');
+                document.getElementById('image-result').classList.add('active');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
